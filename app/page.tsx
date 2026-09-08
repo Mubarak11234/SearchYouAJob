@@ -7,6 +7,7 @@ import StartScreen from "@/components/StartScreen";
 import ChatView from "@/components/ChatView";
 import AuthButton from "@/components/AuthButton";
 import { supabase } from "@/lib/supabase";
+import ThemeToggle from "@/components/ThemeToggle";
 
 type Job = {
   title: string;
@@ -220,8 +221,8 @@ export default function Home() {
       />
 
       <div className="relative flex flex-1 flex-col items-center px-4">
-        <AuthButton onOpenSidebar={() => setSidebarOpen(true)} />
-
+      {/* <AuthButton onOpenSidebar={() => setSidebarOpen(true)} /> */}
+      <AuthButton onOpenSidebar={() => setSidebarOpen(true)} />
         <AnimatePresence mode="wait">
           {!started && (
             <motion.div

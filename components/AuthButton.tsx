@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import AuthModal from "@/components/AuthModal";
+import ThemeToggle from "@/components/ThemeToggle";
 
 type Props = {
   onOpenSidebar: () => void;
@@ -44,12 +45,15 @@ export default function AuthButton({ onOpenSidebar }: Props) {
           </svg>
         </button>
 
-        <button
-          onClick={handleClick}
-          className="rounded-full border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 shadow-sm hover:bg-zinc-50"
-        >
-          {email ? "Log out" : "Log in"}
-        </button>
+        <div className="flex items-center gap-3">
+          <ThemeToggle />
+          <button
+            onClick={handleClick}
+            className="rounded-full border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 shadow-sm hover:bg-zinc-50"
+          >
+            {email ? "Log out" : "Log in"}
+          </button>
+        </div>
       </div>
 
       {showModal && <AuthModal onClose={() => setShowModal(false)} />}
