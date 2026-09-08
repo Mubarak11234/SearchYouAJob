@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Sidebar from "@/components/Sidebar";
 import StartScreen from "@/components/StartScreen";
 import ChatView from "@/components/ChatView";
 import AuthButton from "@/components/AuthButton";
+import { supabase } from "@/lib/supabase";
 
 type Job = {
   title: string;
@@ -52,7 +53,7 @@ const FAKE_JOBS: Job[] = [
 ];
 
 function makeId() {
-  return Math.random().toString(36).slice(2, 10);
+  return crypto.randomUUID();
 }
 
 export default function Home() {
@@ -60,11 +61,74 @@ export default function Home() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
 
   const activeConversation = conversations.find((c) => c.id === activeId) ?? null;
   const started = activeConversation !== null;
+
+  // Get the current logged-in user's id once on load, and whenever auth state changes.
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setUserId(data.user?.id ?? null);
+    });
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUserId(session?.user?.id ?? null);
+    });
+
+    return () => listener.subscription.unsubscribe();
+  }, []);
+
+  // Load this user's existing conversations + messages from Supabase.
+  useEffect(() => {
+    if (!userId) {
+      setConversations([]);
+      return;
+    }
+
+    async function loadConversations() {
+      const { data: convoRows, error: convoError } = await supabase
+        .from("conversations")
+        .select("id, title")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
+
+      if (convoError || !convoRows) {
+        console.error("Failed to load conversations:", convoError);
+        return;
+      }
+
+      const loaded: Conversation[] = [];
+
+      for (const convo of convoRows) {
+        const { data: msgRows, error: msgError } = await supabase
+          .from("messages")
+          .select("role, content, jobs")
+          .eq("conversation_id", convo.id)
+          .order("created_at", { ascending: true });
+
+        if (msgError || !msgRows) {
+          console.error("Failed to load messages:", msgError);
+          continue;
+        }
+
+        loaded.push({
+          id: convo.id,
+          title: convo.title,
+          messages: msgRows.map((m) => ({
+            role: m.role as "user" | "mentor",
+            text: m.content,
+            jobs: m.jobs ?? undefined,
+          })),
+        });
+      }
+
+      setConversations(loaded);
+    }
+
+    loadConversations();
+  }, [userId]);
 
   function handleNewChat() {
     setActiveId(null);
@@ -77,30 +141,42 @@ export default function Home() {
     setMessage("");
   }
 
-  function handleSend() {
-    if (!message.trim() || loading) return;
+  async function handleSend() {
+    if (!message.trim() || loading || !userId) return;
 
     const userMessage: Message = { role: "user", text: message };
     let targetId = activeId;
 
     if (!targetId) {
       targetId = makeId();
+      const title = message.slice(0, 40);
+
       const newConversation: Conversation = {
         id: targetId,
-        title: message.slice(0, 40),
+        title,
         messages: [userMessage],
       };
       setConversations((prev) => [newConversation, ...prev]);
       setActiveId(targetId);
-      // TODO(db): create the conversation row in the database here.
+
+      await supabase.from("conversations").insert({
+        id: targetId,
+        user_id: userId,
+        title,
+      });
     } else {
       setConversations((prev) =>
         prev.map((c) =>
           c.id === targetId ? { ...c, messages: [...c.messages, userMessage] } : c
         )
       );
-      // TODO(db): append this user message to the conversation in the database here.
     }
+
+    await supabase.from("messages").insert({
+      conversation_id: targetId,
+      role: "user",
+      content: userMessage.text,
+    });
 
     setMessage("");
     setLoading(true);
@@ -109,7 +185,7 @@ export default function Home() {
 
     // TODO(backend): replace this setTimeout with a real call to
     // app/api/chat/route.ts (LangGraph -> Gemini -> Adzuna -> Gemini, streamed).
-    setTimeout(() => {
+    setTimeout(async () => {
       const mentorMessage: Message = {
         role: "mentor",
         text: "Found a few postings that match what you're after. The first two are worth a close look.",
@@ -122,7 +198,13 @@ export default function Home() {
         )
       );
       setLoading(false);
-      // TODO(db): save the mentor's reply to the database here.
+
+      await supabase.from("messages").insert({
+        conversation_id: finalId,
+        role: "mentor",
+        content: mentorMessage.text,
+        jobs: mentorMessage.jobs,
+      });
     }, 1200);
   }
 
@@ -138,11 +220,7 @@ export default function Home() {
       />
 
       <div className="relative flex flex-1 flex-col items-center px-4">
-        <AuthButton
-          isLoggedIn={isLoggedIn}
-          onToggle={() => setIsLoggedIn((v) => !v)}
-          onOpenSidebar={() => setSidebarOpen(true)}
-        />
+        <AuthButton onOpenSidebar={() => setSidebarOpen(true)} />
 
         <AnimatePresence mode="wait">
           {!started && (
