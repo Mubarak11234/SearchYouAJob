@@ -25,7 +25,7 @@ type Props = {
 
 export default function ChatView({ messages, loading }: Props) {
   return (
-    <div className="flex w-full max-w-2xl flex-1 flex-col overflow-y-auto py-6">
+    <div className="flex w-full max-w-2xl flex-1 flex-col overflow-y-auto py-6 pb-40">
       {messages.map((m, i) => (
         <motion.div
           key={i}

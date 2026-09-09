@@ -219,7 +219,7 @@ export default function Home() {
         onClose={() => setSidebarOpen(false)}
       />
 
-      <div className="relative flex flex-1 flex-col items-center px-4">
+      <div className="relative flex min-h-0 flex-1 flex-col items-center overflow-y-auto px-4">
         <AuthButton onOpenSidebar={() => setSidebarOpen(true)} />
 
         <AnimatePresence mode="wait">
