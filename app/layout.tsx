@@ -14,6 +14,10 @@ export const metadata: Metadata = {
   description:
     "SearchYouAJob is an AI-powered job search assistant that helps you find relevant jobs through conversational search.",
 
+  icons: {
+  icon: "/searchYouAJobIcon.png",
+  },
+
   keywords: [
     "job search",
     "remote jobs",

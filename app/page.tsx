@@ -243,7 +243,10 @@ export default function Home() {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.18, ease: "easeInOut" }}
             >
-              <ChatView messages={activeConversation.messages} />
+              <ChatView
+              messages={activeConversation.messages}
+              loading={loading}
+              />
 
               <motion.div
                 initial={{ opacity: 0, y: 6 }}

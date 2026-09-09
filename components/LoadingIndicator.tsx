@@ -1,35 +1,52 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
 import Image from "next/image";
-
-const MESSAGES = [
-  "Evaluating your search...",
-  "Scanning listings...",
-  "Matching your skills...",
-  "Almost there...",
-];
+import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
 
 export default function LoadingIndicator() {
-  const [messageIndex, setMessageIndex] = useState(0);
+  const [dots, setDots] = useState("");
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setMessageIndex((i) => (i + 1) % MESSAGES.length);
-    }, 2200);
+      setDots((current) => {
+        if (current.length >= 5) return "";
+        return current + ".";
+      });
+    }, 200);
+
     return () => clearInterval(interval);
   }, []);
 
   return (
-    <div className="mb-5 flex items-center gap-3 self-start">
+    <div className="flex items-center gap-3 py-6">
       <motion.div
-        animate={{ opacity: [0.3, 1, 0.3] }}
-        transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
+        animate={{
+          scale: [1, 0.88, 1],
+          opacity: [1, 0.4, 1],
+          filter: [
+            "drop-shadow(0 0 0px rgba(105,171,247,0))",
+            "drop-shadow(0 0 12px rgba(105,171,247,0.8))",
+            "drop-shadow(0 0 0px rgba(105,171,247,0))",
+          ],
+        }}
+        transition={{
+          duration: 0.6,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
       >
-        <Image src="/searchYouAJobIcon.png" alt="" width={24} height={24} />
+        <Image
+          src="/searchYouAJobIcon.png"
+          alt="Fetching"
+          width={32}
+          height={32}
+        />
       </motion.div>
-      <span className="text-sm text-zinc-500">{MESSAGES[messageIndex]}</span>
+
+      <span className="text-sm text-zinc-500">
+        Fetching{dots}
+      </span>
     </div>
   );
 }
