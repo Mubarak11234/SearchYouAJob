@@ -8,7 +8,7 @@ type Props = {
   onUpdate?: () => void;
 };
 
-export default function StreamingText({ text, speed = 20, onUpdate }) {
+export default function StreamingText({ text, speed = 20, onUpdate }: Props) {
   const words = text.split(" ");
   const [count, setCount] = useState(0);
 

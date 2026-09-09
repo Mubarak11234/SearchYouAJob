@@ -43,18 +43,43 @@ export default function Home() {
   const activeConversation = conversations.find((c) => c.id === activeId) ?? null;
   const started = activeConversation !== null;
 
+  // Effect 1: track auth state, and migrate any guest conversations into
+  // Supabase the moment someone logs in mid-session.
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       setUserId(data.user?.id ?? null);
     });
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUserId(session?.user?.id ?? null);
+    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const newUserId = session?.user?.id ?? null;
+
+      if (newUserId && !userId && conversations.length > 0) {
+        for (const convo of conversations) {
+          await supabase.from("conversations").insert({
+            id: convo.id,
+            user_id: newUserId,
+            title: convo.title,
+          });
+
+          for (const msg of convo.messages) {
+            await supabase.from("messages").insert({
+              conversation_id: convo.id,
+              role: msg.role,
+              content: msg.text,
+              jobs: msg.jobs,
+            });
+          }
+        }
+      }
+
+      setUserId(newUserId);
     });
 
     return () => listener.subscription.unsubscribe();
-  }, []);
+  }, [userId, conversations]);
 
+  // Effect 2: whenever userId changes, load that user's saved conversations
+  // (or clear them out if logged out).
   useEffect(() => {
     if (!userId) {
       setConversations([]);
@@ -116,9 +141,8 @@ export default function Home() {
   }
 
   async function handleSend() {
-    // if (!message.trim() || loading || !userId) return;
     if (!message.trim() || loading) return;
-    
+
     const userMessage: Message = { role: "user", text: message };
     let targetId = activeId;
 
@@ -134,11 +158,13 @@ export default function Home() {
       setConversations((prev) => [newConversation, ...prev]);
       setActiveId(targetId);
 
-      await supabase.from("conversations").insert({
-        id: targetId,
-        user_id: userId,
-        title,
-      });
+      if (userId) {
+        await supabase.from("conversations").insert({
+          id: targetId,
+          user_id: userId,
+          title,
+        });
+      }
     } else {
       setConversations((prev) =>
         prev.map((c) =>
@@ -147,11 +173,13 @@ export default function Home() {
       );
     }
 
-    await supabase.from("messages").insert({
-      conversation_id: targetId,
-      role: "user",
-      content: userMessage.text,
-    });
+    if (userId) {
+      await supabase.from("messages").insert({
+        conversation_id: targetId,
+        role: "user",
+        content: userMessage.text,
+      });
+    }
 
     setMessage("");
     setLoading(true);
@@ -160,13 +188,13 @@ export default function Home() {
 
     try {
       const activeConvo = conversations.find((c) => c.id === targetId);
-      const recentHistory = (activeConvo?.messages ?? []).slice(-6); // last 6 messages for context
+      const recentHistory = (activeConvo?.messages ?? []).slice(-6);
 
       const res = await fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: userMessage.text, history: recentHistory }),
-    });
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: userMessage.text, history: recentHistory }),
+      });
 
       const data = await res.json();
 
@@ -186,12 +214,14 @@ export default function Home() {
         )
       );
 
-      await supabase.from("messages").insert({
-        conversation_id: finalId,
-        role: "mentor",
-        content: mentorMessage.text,
-        jobs: mentorMessage.jobs,
-      });
+      if (userId) {
+        await supabase.from("messages").insert({
+          conversation_id: finalId,
+          role: "mentor",
+          content: mentorMessage.text,
+          jobs: mentorMessage.jobs,
+        });
+      }
     } catch (error) {
       console.error("Failed to get mentor response:", error);
       const errorMessage: Message = {
@@ -243,10 +273,7 @@ export default function Home() {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.18, ease: "easeInOut" }}
             >
-              <ChatView
-              messages={activeConversation.messages}
-              loading={loading}
-              />
+              <ChatView messages={activeConversation.messages} loading={loading} />
 
               <motion.div
                 initial={{ opacity: 0, y: 6 }}
