@@ -116,8 +116,9 @@ export default function Home() {
   }
 
   async function handleSend() {
-    if (!message.trim() || loading || !userId) return;
-
+    // if (!message.trim() || loading || !userId) return;
+    if (!message.trim() || loading) return;
+    
     const userMessage: Message = { role: "user", text: message };
     let targetId = activeId;
 
