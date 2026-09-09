@@ -11,6 +11,7 @@
   "dependencies": {
     "@langchain/google-genai": "^2.3.0",
     "@supabase/supabase-js": "^2.116.0",
+    "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
     "framer-motion": "^13.2.0",
     "next": "16.3.4",
