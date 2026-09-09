@@ -5,9 +5,10 @@ import { useEffect, useState } from "react";
 type Props = {
   text: string;
   speed?: number;
+  onUpdate?: () => void;
 };
 
-export default function StreamingText({ text, speed = 20 }: Props) {
+export default function StreamingText({ text, speed = 20, onUpdate }) {
   const words = text.split(" ");
   const [count, setCount] = useState(0);
 
@@ -19,7 +20,9 @@ export default function StreamingText({ text, speed = 20 }: Props) {
           clearInterval(interval);
           return c;
         }
-        return c + 1;
+        const next = c + 1;
+        onUpdate?.();
+        return next;
       });
     }, speed);
 

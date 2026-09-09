@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import JobCard from "@/components/JobCard";
 import StreamingText from "@/components/StreamingText";
@@ -24,6 +27,15 @@ type Props = {
 };
 
 export default function ChatView({ messages, loading }: Props) {
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "end",
+    });
+  }, [messages, loading]);
+
   return (
     <div className="flex w-full max-w-2xl flex-1 flex-col overflow-y-auto py-6 pb-40">
       {messages.map((m, i) => (
@@ -35,21 +47,34 @@ export default function ChatView({ messages, loading }: Props) {
           transition={{ duration: 0.15 }}
         >
           {m.role === "user" ? (
-            <div className="mb-1 self-end rounded-2xl bg-zinc-100 px-4 py-2 max-w-[85%]">{m.text}</div>
+            <div className="mb-1 max-w-[85%] self-end rounded-2xl bg-zinc-100 px-4 py-2">
+              {m.text}
+            </div>
           ) : (
             <div className="mb-1 self-start px-1 text-sm text-zinc-700">
-              <StreamingText text={m.text} />
+              <StreamingText
+                text={m.text}
+                onUpdate={() => {
+                  bottomRef.current?.scrollIntoView({
+                    behavior: "smooth",
+                    block: "end",
+                  });
+                }}
+              />
             </div>
           )}
 
           {m.jobs && (
-            <div className="mt-2 flex flex-col gap-3 self-start w-full">
+            <div className="mt-2 flex w-full flex-col gap-3 self-start">
               {m.jobs.map((job, j) => (
                 <motion.div
                   key={j}
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.15, delay: 0.3 + j * 0.06 }}
+                  transition={{
+                    duration: 0.15,
+                    delay: 0.3 + j * 0.06,
+                  }}
                 >
                   <JobCard {...job} />
                 </motion.div>
@@ -60,6 +85,8 @@ export default function ChatView({ messages, loading }: Props) {
       ))}
 
       {loading && <LoadingIndicator />}
+
+      <div ref={bottomRef} />
     </div>
   );
 }
