@@ -11,12 +11,12 @@ export default function StartScreen({ message, setMessage, onSend, loading }: Pr
   return (
     <div className="flex flex-1 w-full flex-col items-center justify-center gap-6 px-4">
       <Image src="/searchYouAJobIcon.png" alt="Search Your Job" width={56} height={56} />
-      <p
-        className="font-medium text-zinc-700 text-center"
-        style={{ fontSize: "clamp(20px, 4vw, 32px)" }}
-      >
-        Tell it what you're looking for. It'll go find it.
-      </p>
+      <h1 
+        className="font-medium text-zinc-700 text-center" 
+        style={{ fontSize: "clamp(20px, 4vw, 32px)" }} 
+      > 
+        Find jobs with AI 
+      </h1>
 
       <div
         className="flex items-center gap-3 rounded-full bg-white shadow-lg shadow-black/10 border border-zinc-100"
