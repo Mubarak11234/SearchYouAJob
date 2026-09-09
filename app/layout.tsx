@@ -71,6 +71,19 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght@6..144,1..1000&display=swap"
           rel="stylesheet"
         />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              name: "SearchYouAJob",
+              url: "https://searchyouajob.vercel.app/",
+              description:
+                "AI-powered job search assistant that helps you find relevant jobs through conversational search.",
+            }),
+          }}
+        />
       </head>
 
       <body suppressHydrationWarning={true}>
