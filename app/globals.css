@@ -18,15 +18,11 @@
 body {
   background: var(--background);
   color: var(--foreground);
-
   font-family: "Google Sans Flex", sans-serif;
   font-optical-sizing: auto;
-
-  transition:
-    background-color 0.15s,
-    color 0.15s;
+  transition: background-color 0.15s, color 0.15s;
 }
 
-.kinguu{
+.kinguu {
   margin: 0;
 }
