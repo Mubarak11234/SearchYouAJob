@@ -89,4 +89,4 @@ export default function ChatView({ messages, loading }: Props) {
       <div ref={bottomRef} />
     </div>
   );
-}
+} 
