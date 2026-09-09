@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Analytics } from "@vercel/analytics/next"
 
 export const metadata: Metadata = {
   title: "Your Website",
@@ -30,6 +31,7 @@ export default function RootLayout({
       <body suppressHydrationWarning={true}>
         {children}
         <SpeedInsights />
+        <Analytics />
         </body>
     </html>
   );
