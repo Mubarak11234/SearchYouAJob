@@ -11,9 +11,17 @@ export async function POST(request: Request) {
   }
 
   try {
+    const t0 = Date.now();
     const filters = await extractSearchFilters(userMessage);
+    console.log(`extractSearchFilters: ${Date.now() - t0}ms`);
+
+    const t1 = Date.now();
     const jobs = await searchJobs(filters);
+    console.log(`searchJobs: ${Date.now() - t1}ms`);
+
+    const t2 = Date.now();
     const mentorText = await generateMentorResponse(userMessage, jobs, history);
+    console.log(`generateMentorResponse: ${Date.now() - t2}ms`);
 
     return Response.json({ text: mentorText, jobs });
   } catch (error) {
