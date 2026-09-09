@@ -26,7 +26,7 @@ export default function Sidebar({
 }: Props) {
   const content = (
     <>
-      <div className="mb-6 flex items-center gap-2">
+      <div className="mb-6 flex items-center gap-2 ">
         <Image src="/searchYouAJobIcon.png" alt="SearchYouAJob" width={32} height={32} />
         <span className="font-semibold text-zinc-800">SearchYouAJob</span>
       </div>

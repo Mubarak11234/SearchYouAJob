@@ -4,9 +4,10 @@ type Props = {
   location: string;
   pay: string;
   why: string;
+  url?: string;
 };
 
-export default function JobCard({ title, company, location, pay, why }: Props) {
+export default function JobCard({ title, company, location, pay, why, url }: Props) {
   return (
     <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
       <div className="flex items-baseline justify-between">
@@ -17,9 +18,17 @@ export default function JobCard({ title, company, location, pay, why }: Props) {
         {company} — {location}
       </p>
       <p className="mt-2 text-sm text-zinc-600">{why}</p>
-      <a href="#" className="mt-3 inline-block text-sm font-medium" style={{ color: "#69ABF7" }}>
-        View listing →
-      </a>
+      {url && (
+          <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-3 inline-block text-sm font-medium"
+          style={{ color: "#69ABF7" }}
+        >
+          View listing →
+        </a>
+      )}
     </div>
   );
 }

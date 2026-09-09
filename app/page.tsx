@@ -7,7 +7,6 @@ import StartScreen from "@/components/StartScreen";
 import ChatView from "@/components/ChatView";
 import AuthButton from "@/components/AuthButton";
 import { supabase } from "@/lib/supabase";
-import ThemeToggle from "@/components/ThemeToggle";
 
 type Job = {
   title: string;
@@ -29,30 +28,6 @@ type Conversation = {
   messages: Message[];
 };
 
-const FAKE_JOBS: Job[] = [
-  {
-    title: "Junior Data Analyst",
-    company: "Fieldstone & Co.",
-    location: "Remote",
-    pay: "$32k–40k",
-    why: "SQL is the only required skill listed; Python is optional.",
-  },
-  {
-    title: "Data Analyst, Entry Level",
-    company: "Harbor Analytics",
-    location: "Remote (US/EU)",
-    pay: "$35k–44k",
-    why: "No degree requirement. Asks for one SQL project in the application.",
-  },
-  {
-    title: "Junior Analytics Associate",
-    company: "Loomis Retail Group",
-    location: "Remote",
-    pay: "$30k–36k",
-    why: "Lower pay band, but explicitly open to first-time analysts.",
-  },
-];
-
 function makeId() {
   return crypto.randomUUID();
 }
@@ -68,7 +43,6 @@ export default function Home() {
   const activeConversation = conversations.find((c) => c.id === activeId) ?? null;
   const started = activeConversation !== null;
 
-  // Get the current logged-in user's id once on load, and whenever auth state changes.
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       setUserId(data.user?.id ?? null);
@@ -81,7 +55,6 @@ export default function Home() {
     return () => listener.subscription.unsubscribe();
   }, []);
 
-  // Load this user's existing conversations + messages from Supabase.
   useEffect(() => {
     if (!userId) {
       setConversations([]);
@@ -184,13 +157,26 @@ export default function Home() {
 
     const finalId = targetId;
 
-    // TODO(backend): replace this setTimeout with a real call to
-    // app/api/chat/route.ts (LangGraph -> Gemini -> Adzuna -> Gemini, streamed).
-    setTimeout(async () => {
+    try {
+      const activeConvo = conversations.find((c) => c.id === targetId);
+      const recentHistory = (activeConvo?.messages ?? []).slice(-6); // last 6 messages for context
+
+      const res = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: userMessage.text, history: recentHistory }),
+    });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Something went wrong");
+      }
+
       const mentorMessage: Message = {
         role: "mentor",
-        text: "Found a few postings that match what you're after. The first two are worth a close look.",
-        jobs: FAKE_JOBS,
+        text: data.text,
+        jobs: data.jobs,
       };
 
       setConversations((prev) =>
@@ -198,7 +184,6 @@ export default function Home() {
           c.id === finalId ? { ...c, messages: [...c.messages, mentorMessage] } : c
         )
       );
-      setLoading(false);
 
       await supabase.from("messages").insert({
         conversation_id: finalId,
@@ -206,7 +191,20 @@ export default function Home() {
         content: mentorMessage.text,
         jobs: mentorMessage.jobs,
       });
-    }, 1200);
+    } catch (error) {
+      console.error("Failed to get mentor response:", error);
+      const errorMessage: Message = {
+        role: "mentor",
+        text: "Sorry, something went wrong finding jobs. Try again in a moment.",
+      };
+      setConversations((prev) =>
+        prev.map((c) =>
+          c.id === finalId ? { ...c, messages: [...c.messages, errorMessage] } : c
+        )
+      );
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -221,8 +219,8 @@ export default function Home() {
       />
 
       <div className="relative flex flex-1 flex-col items-center px-4">
-      {/* <AuthButton onOpenSidebar={() => setSidebarOpen(true)} /> */}
-      <AuthButton onOpenSidebar={() => setSidebarOpen(true)} />
+        <AuthButton onOpenSidebar={() => setSidebarOpen(true)} />
+
         <AnimatePresence mode="wait">
           {!started && (
             <motion.div
@@ -250,7 +248,7 @@ export default function Home() {
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.18, delay: 0.05 }}
-                className="mb-6 flex items-center gap-3 rounded-full bg-white shadow-lg shadow-black/10 border border-zinc-100"
+                className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 rounded-full bg-white shadow-lg shadow-black/10 border border-zinc-100"
                 style={{ width: "min(1000px, 92vw)", padding: "12px 24px" }}
               >
                 <input
